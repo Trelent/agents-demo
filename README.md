@@ -1,6 +1,13 @@
-# Translator Agent Demo
+# Trelent Agents Demo
 
 A demo showing how to build, deploy, and run agents with Trelent.
+
+## Sandboxes
+
+| Sandbox | Tools | Use Case |
+|---------|-------|----------|
+| `translator` | `trans` CLI | Text translation |
+| `data-handler` | `csvkit` | CSV processing & analysis |
 
 ## Prerequisites
 
@@ -8,20 +15,19 @@ A demo showing how to build, deploy, and run agents with Trelent.
 - Python 3.11+
 - `trelent-agents` package installed (`uv sync` or `pip install trelent-agents`)
 
-## 1. Build and Push the Sandbox
+## 1. Build and Push Sandboxes
 
-Build the translator sandbox image and push it to the Trelent registry:
+Build and push sandbox images to the Trelent registry:
 
 ```bash
-cd translator-agent
+# Translator sandbox
+docker build -t agents.trelent.com/translator:latest translator-agent/
+docker push agents.trelent.com/translator:latest
 
-export IMAGE=agents.trelent.com/translator:latest
-
-docker build -t $IMAGE .
-docker push $IMAGE
+# Data handler sandbox
+docker build -t agents.trelent.com/data-handler:latest data-handler/
+docker push agents.trelent.com/data-handler:latest
 ```
-
-The sandbox includes `translate-shell` (`trans` CLI) for translations.
 
 ## 2. Register the Agent
 
@@ -82,6 +88,9 @@ Sample files in `input/`:
 - `greeting.txt` - Welcome message
 - `menu.txt` - Restaurant menu  
 - `instructions.txt` - Assembly instructions
+- `sales.csv` - Sales transactions
+- `customers.csv` - Customer records
+- `inventory.csv` - Inventory levels
 
 Imported files are available at `/mnt/` inside the sandbox.
 
@@ -99,9 +108,12 @@ Imported files are available at `/mnt/` inside the sandbox.
 ## Example Workflow
 
 ```bash
-# 1. Push sandbox
+# 1. Push sandboxes
 docker build -t agents.trelent.com/translator:latest translator-agent/
 docker push agents.trelent.com/translator:latest
+
+docker build -t agents.trelent.com/data-handler:latest data-handler/
+docker push agents.trelent.com/data-handler:latest
 
 # 2. Register
 python src/register_agent.py --register

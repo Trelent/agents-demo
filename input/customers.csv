@@ -1,0 +1,9 @@
+id,name,email,region,signup_date,status
+1,Alice Johnson,alice@example.com,North,2025-06-01,active
+2,Bob Smith,bob@example.com,South,2025-07-15,active
+3,Carol Williams,carol@example.com,East,2025-08-20,inactive
+4,David Brown,david@example.com,West,2025-09-10,active
+5,Eva Martinez,eva@example.com,North,2025-10-05,active
+6,Frank Lee,frank@example.com,South,2025-11-12,inactive
+7,Grace Kim,grace@example.com,East,2025-12-01,active
+8,Henry Chen,henry@example.com,West,2026-01-08,active
