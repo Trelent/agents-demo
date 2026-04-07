@@ -1,7 +1,0 @@
-product,category,stock,reorder_level,warehouse
-Widget A,Electronics,500,100,WH-01
-Gadget B,Electronics,250,50,WH-01
-Tool C,Hardware,1200,200,WH-02
-Part D,Hardware,3000,500,WH-02
-Widget A,Electronics,300,100,WH-03
-Gadget B,Electronics,150,50,WH-03
