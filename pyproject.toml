@@ -1,6 +1,6 @@
 [project]
-name = "agents-cli"
-version = "0.1.3"
+name = "trelent-cli"
+version = "0.1.4"
 description = "CLI wrapper for trelent-agents SDK"
 readme = "README.md"
 authors = [

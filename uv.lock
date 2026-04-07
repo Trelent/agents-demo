@@ -3,23 +3,6 @@ revision = 2
 requires-python = ">=3.11"
 
 [[package]]
-name = "agents-cli"
-version = "0.1.3"
-source = { editable = "." }
-dependencies = [
-    { name = "click" },
-    { name = "python-dotenv" },
-    { name = "trelent-agents" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.1" },
-    { name = "python-dotenv", specifier = ">=1.0" },
-    { name = "trelent-agents", specifier = ">=0.2.1" },
-]
-
-[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -303,6 +286,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3c/10/5ee87a6cd93ef26af6728f4d8619de2ea308ac6cb8f9c993adf31c6982a2/trelent_agents-0.2.2.tar.gz", hash = "sha256:5fd723e859c616af07fa1fb8f6e4fa614a19b91c448a112eb8b963651c1a3bbf", size = 7913, upload-time = "2026-04-06T16:25:06.411Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/68/31/060c4f0f0a60e90dc1edc5bbd298fef0b21d4f658da7a8d23fcf2e1aeef8/trelent_agents-0.2.2-py3-none-any.whl", hash = "sha256:199b669d7f6a9ff10f520d3c8f69c2a58d78f9ece4d4f7d1b0aaec9d97ea0df5", size = 12530, upload-time = "2026-04-06T16:25:05.468Z" },
+]
+
+[[package]]
+name = "trelent-cli"
+version = "0.1.4"
+source = { editable = "." }
+dependencies = [
+    { name = "click" },
+    { name = "python-dotenv" },
+    { name = "trelent-agents" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click", specifier = ">=8.1" },
+    { name = "python-dotenv", specifier = ">=1.0" },
+    { name = "trelent-agents", specifier = ">=0.2.1" },
 ]
 
 [[package]]

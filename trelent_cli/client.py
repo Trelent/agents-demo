@@ -7,6 +7,7 @@ from trelent_agents import Client
 
 CONFIG_DIR = Path.home() / ".trelent" / "agents"
 CONFIG_FILE = CONFIG_DIR / "config.json"
+DEFAULT_API_URL = "https://agents.trelent.com"
 
 
 def load_config() -> dict:
@@ -28,6 +29,26 @@ def save_config(client_id: str, client_secret: str, api_url: str | None = None) 
     CONFIG_FILE.chmod(0o600)
 
 
+def check_credentials(client_id: str, client_secret: str, api_url: str | None = None) -> tuple[bool, str]:
+    """Check if credentials are valid by making an authenticated API call.
+
+    Returns (success, message) tuple.
+    """
+    url = api_url or DEFAULT_API_URL
+
+    try:
+        client = Client(
+            api_url=url,
+            client_id=client_id,
+            client_secret=client_secret,
+        )
+        # Try listing runs - this requires auth and validates credentials
+        client.runs.list()
+        return True, f"Connected to {url}"
+    except Exception as e:
+        return False, str(e)
+
+
 def get_client() -> Client:
     """Create an authenticated client from env vars or config file."""
     client_id = os.environ.get("TRELENT_CLIENT_ID")
@@ -46,7 +67,7 @@ def get_client() -> Client:
         sys.exit(1)
 
     return Client(
-        api_url="https://api.dev.trelent.com/agent",
+        api_url=api_url or DEFAULT_API_URL,
         client_id=client_id,
         client_secret=client_secret,
     )
