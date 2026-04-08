@@ -108,11 +108,10 @@ def track_run(run_id: str | None, latest: bool, poll: int):
 
 @runs.command("create")
 @click.option("--sandbox", "-s", required=True, help="Sandbox name (e.g., translator:latest)")
-@click.option("--model", "-m", default="claude-sonnet-4-5", help="Model to use")
 @click.option("--prompt", "-p", required=True, help="Prompt for the run")
 @click.option("--import-path", "-i", multiple=True, help="Local paths to import (mounted at /mnt/)")
 @click.option("--track", "-t", "should_track", is_flag=True, help="Track run until completion")
-def create_run(sandbox: str, model: str, prompt: str, import_path: tuple, should_track: bool):
+def create_run(sandbox: str, prompt: str, import_path: tuple, should_track: bool):
     """Create a new run.
 
     Example: trelent runs create -s translator:latest -p "Translate hello to Spanish"
@@ -123,7 +122,6 @@ def create_run(sandbox: str, model: str, prompt: str, import_path: tuple, should
 
     run = client.runs.create(
         sandbox=sandbox,
-        model=model,
         prompt=prompt,
         imports=imports,
     )

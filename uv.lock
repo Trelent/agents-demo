@@ -277,20 +277,20 @@ wheels = [
 
 [[package]]
 name = "trelent-agents"
-version = "0.2.2"
+version = "0.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3c/10/5ee87a6cd93ef26af6728f4d8619de2ea308ac6cb8f9c993adf31c6982a2/trelent_agents-0.2.2.tar.gz", hash = "sha256:5fd723e859c616af07fa1fb8f6e4fa614a19b91c448a112eb8b963651c1a3bbf", size = 7913, upload-time = "2026-04-06T16:25:06.411Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ef/67/fa8d847577360c498561674f1afd0115ea83eb08b182424ec1076d316404/trelent_agents-0.2.3.tar.gz", hash = "sha256:5ef07d32944ce280d40cee6d0af7e60a5c20f0e67e27d6a87788bc0069cea44c", size = 8488, upload-time = "2026-04-07T23:45:02.729Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/31/060c4f0f0a60e90dc1edc5bbd298fef0b21d4f658da7a8d23fcf2e1aeef8/trelent_agents-0.2.2-py3-none-any.whl", hash = "sha256:199b669d7f6a9ff10f520d3c8f69c2a58d78f9ece4d4f7d1b0aaec9d97ea0df5", size = 12530, upload-time = "2026-04-06T16:25:05.468Z" },
+    { url = "https://files.pythonhosted.org/packages/a2/54/a5a1eefc59cbe99a26e34116193c64b53cf19f7a69b0e441c76022b3a4f2/trelent_agents-0.2.3-py3-none-any.whl", hash = "sha256:3940d0345477b4cc8a9dca048fbd37165b706aa632aa93b1610de5304246d282", size = 15030, upload-time = "2026-04-07T23:45:01.81Z" },
 ]
 
 [[package]]
 name = "trelent-cli"
-version = "0.1.4"
+version = "0.1.10"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
