@@ -1,11 +1,8 @@
 """Main CLI entry point."""
 import click
-from dotenv import load_dotenv
 
 from .client import set_profile
 from .commands import auth, runs, sandboxes
-
-load_dotenv()
 
 
 @click.group()
