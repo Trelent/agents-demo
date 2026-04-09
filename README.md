@@ -1,114 +1,153 @@
-# Trelent Agents CLI
+# Trelent Agents Demo
 
-A CLI wrapper for the trelent-agents SDK.
+Quickstart for building and running agent sandboxes on the Trelent platform.
 
-## Sandboxes
+## Prerequisites
 
-| Sandbox | Tools | Use Case |
-|---------|-------|----------|
-| `translator` | `trans` CLI | Text translation |
-| `data-handler` | `csvkit` | CSV processing & analysis |
+- Docker
+- Python 3.11+ with [uv](https://docs.astral.sh/uv/)
+- Trelent credentials (client ID + secret)
 
-## Installation
-
-```bash
-cd script
-uv sync  # or pip install -e .
-```
-
-## Authentication
-
-Set your credentials via environment variables:
+## 1. Install the CLI
 
 ```bash
-export TRELENT_CLIENT_ID="your-client-id"
-export TRELENT_CLIENT_SECRET="your-client-secret"
+cd trelent-cli
+uv sync
+source .venv/bin/activate
 ```
 
-Optionally override the API URL:
+## 2. Authenticate
+
+Add a profile with your credentials:
 
 ```bash
-export TRELENT_API_URL="https://agents.trelent.com"
+trelent auth add dev --skip-verify
+# Prompts for: Client ID, Client secret, API URL
 ```
 
-## Commands
-
-### List runs
+Use `--skip-verify` if credential verification fails (e.g., network issues). Then test separately:
 
 ```bash
-agents runs
-agents runs -n 20  # show 20 most recent
+trelent auth test
 ```
 
-### Track a run
+Switch between profiles:
 
 ```bash
-agents track run-123abc
-agents track --latest       # track the most recent run
-agents track -l -p 5        # poll every 5 seconds
+trelent auth list          # See all profiles
+trelent auth use dev       # Set default
+trelent -p prod <command>  # Use specific profile for one command
 ```
 
-### Get run details
+## 3. Build & Push a Sandbox Image
+
+Create your agent as a folder under `agents/` with a `Dockerfile`:
+
+```
+agents/
+├── build_and_push.sh
+├── data-handler/
+│   ├── Dockerfile
+│   └── skills/
+├── translator-agent/
+│   └── ...
+└── my-custom-agent/      # ← Your new agent
+    ├── Dockerfile
+    └── skills/
+```
+
+Then build and push using the folder name:
 
 ```bash
-agents get run-123abc
-agents get --latest
+cd agents
+./build_and_push.sh my-custom-agent        # Pushes as :latest
+./build_and_push.sh my-custom-agent:v2     # Custom tag
 ```
 
-### Create a run
+The script handles Docker login, build, and push to `registry.dev.trelent.com/<client_id>/<agent>:<tag>`.
+
+The image is automatically registered as a sandbox once pushed.
+
+## 4. List Sandboxes
 
 ```bash
-agents create -s translator:latest -p "Translate hello to Spanish"
-agents create -s translator:latest -m gpt-4o -p "Translate to French" -t  # track immediately
-agents create -s translator:latest -p "Translate files" -i ./input/      # import local files
+trelent sandboxes list
 ```
 
-### Fork a run
+Output:
+
+```
+Available sandboxes:
+  - data-handler:latest
+  - translator-agent:latest
+```
+
+## 5. Create a Run
+
+Basic run:
 
 ```bash
-agents fork run-123abc -p "Now translate to German"
-agents fork --latest -p "Summarize the translations"
-agents fork -l -p "New prompt" -i ./more-files/
+trelent runs create \
+  -s data-handler:latest \
+  -p "Analyze the CSV and show me the top 5 rows by revenue"
 ```
 
-### Manage sandboxes
+With local file import (mounted at `/mnt/`):
 
 ```bash
-agents sandboxes list
-agents sandboxes register translator:latest
+trelent runs create \
+  -s data-handler:latest \
+  -p "Parse /mnt/sales.csv and summarize the data" \
+  -i ~/data/sales.csv
 ```
 
-## Example Workflow
+Track until completion with `-t`:
 
 ```bash
-# 1. Push sandboxes to registry
-docker build -t agents.trelent.com/translator:latest translator-agent/
-docker push agents.trelent.com/translator:latest
-
-# 2. Register the sandbox
-agents sandboxes register translator:latest
-
-# 3. Create a run with imports
-agents create -s translator:latest -p "Translate all files in /mnt/" -i ./input/
-
-# 4. Track the latest run
-agents track --latest
-
-# 5. Fork to another language
-agents fork --latest -p "Translate to German instead"
-
-# 6. Track the fork
-agents track --latest
+trelent runs create \
+  -s translator-agent:latest \
+  -p "Translate 'Hello world' to Japanese" \
+  -t
 ```
 
-## Sample Files
+## 6. Track & Manage Runs
 
-Place files in `input/` for import:
-- `greeting.txt` - Welcome message
-- `menu.txt` - Restaurant menu  
-- `instructions.txt` - Assembly instructions
-- `sales.csv` - Sales transactions
-- `customers.csv` - Customer records
-- `inventory.csv` - Inventory levels
+```bash
+trelent runs list              # Recent runs
+trelent runs list -s data-handler:latest  # Filter by sandbox
 
-Imported files are available at `/mnt/` inside the sandbox.
+trelent runs get <run-id>      # Get run details
+trelent runs get --latest      # Most recent run
+
+trelent runs track <run-id>    # Poll until complete
+trelent runs track --latest    # Track most recent
+```
+
+## 7. Fork a Run
+
+Continue from a previous run's state:
+
+```bash
+trelent runs fork <run-id> -p "Now group by region instead"
+trelent runs fork --latest -p "Add a chart"
+```
+
+---
+
+## Demo Agents
+
+| Agent | Description | Example Prompt |
+|-------|-------------|----------------|
+| `data-handler` | CSV analysis with csvkit | `"Show stats for /mnt/data.csv"` |
+| `translator-agent` | Text translation | `"Translate 'Good morning' to French"` |
+
+## Sandbox Requirements
+
+Custom sandbox images must:
+
+- Use Alpine base (e.g., `python:3.12-alpine`)
+- Install bash: `apk add --no-cache bash`
+- Include keep-alive CMD
+- Place skill docs in `/skills/`
+
+See `agents/data-handler/Dockerfile` for a working example.
