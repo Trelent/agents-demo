@@ -1,7 +1,9 @@
 """Run management commands."""
+import os
 import time
 import click
-from trelent_agents import LocalImporter
+from trelent_agents import ClaudeCodeHarnessSpec, HarnessKind, LocalImporter
+from trelent_agents.types import HarnessSpec
 from ..client import get_client
 
 
@@ -122,6 +124,10 @@ def create_run(sandbox: str, prompt: str, import_path: tuple, should_track: bool
 
     run = client.runs.create(
         sandbox=sandbox,
+        harness=ClaudeCodeHarnessSpec(
+            kind=HarnessKind.CLAUDE_CODE,
+            model="claude-sonnet-4-6",
+        ),
         prompt=prompt,
         imports=imports,
     )
