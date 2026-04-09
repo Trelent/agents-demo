@@ -11,9 +11,17 @@ Quickstart for building and running agent sandboxes on the Trelent platform.
 ## 1. Install the CLI
 
 ```bash
-cd trelent-cli
 uv sync
-source .venv/bin/activate
+```
+
+```bash
+uv tool install ./trelent-cli
+```
+
+This installs `trelent` globally. To update after changes:
+
+```bash
+uv tool install ./trelent-cli --reinstall
 ```
 
 ## 2. Authenticate
