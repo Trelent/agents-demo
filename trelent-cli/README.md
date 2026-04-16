@@ -1,114 +1,171 @@
-# Trelent Agents CLI
+# Trelent CLI
 
-A CLI wrapper for the trelent-agents SDK.
+CLI for managing Trelent agent sandboxes and runs.
 
-## Sandboxes
+## Quickstart
 
-| Sandbox | Tools | Use Case |
-|---------|-------|----------|
-| `translator` | `trans` CLI | Text translation |
-| `data-handler` | `csvkit` | CSV processing & analysis |
+```bash
+# Install
+cd trelent-cli
+uv tool install .
+
+# Authenticate
+trelent auth add
+# → prompts for client ID, secret, API URL, registry URL
+
+# Build and push a sandbox
+trelent sandboxes build ./agents/my-agent
+
+# Create a run
+trelent runs create -s my-agent:latest -p "Do the thing"
+
+# Track it
+trelent runs track --latest
+```
 
 ## Installation
 
 ```bash
-cd script
-uv sync  # or pip install -e .
+cd trelent-cli
+uv tool install .
+```
+
+Or for development:
+
+```bash
+cd trelent-cli
+uv sync
+uv tool install . --force  # reinstall after changes
 ```
 
 ## Authentication
 
-Set your credentials via environment variables:
+### Using profiles (recommended)
+
+```bash
+# Add a profile (interactive)
+trelent auth add prod
+
+# Add with flags
+trelent auth add dev --id YOUR_ID --secret YOUR_SECRET
+
+# List profiles
+trelent auth list
+
+# Switch profiles
+trelent auth use prod
+
+# Show current profile
+trelent auth show
+
+# Test credentials
+trelent auth test
+
+# Get a JWT token (for debugging)
+trelent auth token
+```
+
+### Using environment variables
 
 ```bash
 export TRELENT_CLIENT_ID="your-client-id"
 export TRELENT_CLIENT_SECRET="your-client-secret"
-```
-
-Optionally override the API URL:
-
-```bash
-export TRELENT_API_URL="https://agents.trelent.com"
+export TRELENT_API_URL="https://api.dev.trelent.com/agent"  # optional
+export TRELENT_PROFILE="prod"  # optional, use a specific profile
 ```
 
 ## Commands
 
-### List runs
+### Sandboxes
+
+Build and push Docker images to your registry:
 
 ```bash
-agents runs
-agents runs -n 20  # show 20 most recent
+# Build using folder name as image name (→ my-agent:latest)
+trelent sandboxes build ./agents/my-agent
+
+# Custom name:tag
+trelent sandboxes build -t custom-name:v2 ./agents/my-agent
+
+# List available sandboxes
+trelent sandboxes list
+
+# Get sandbox details
+trelent sandboxes get my-agent:latest
 ```
 
-### Track a run
+### Runs
 
 ```bash
-agents track run-123abc
-agents track --latest       # track the most recent run
-agents track -l -p 5        # poll every 5 seconds
+# List recent runs
+trelent runs list
+trelent runs list -n 20  # show 20 most recent
+
+# Create a run
+trelent runs create -s translator:latest -p "Translate hello to Spanish"
+trelent runs create -s translator:latest -p "Translate files" -i ./input/  # with local files
+
+# Track a run until completion
+trelent runs track <run-id>
+trelent runs track --latest
+trelent runs track -l -p 5  # poll every 5 seconds
+
+# Get run details
+trelent runs get <run-id>
+trelent runs get --latest
+
+# Fork a run with a new prompt
+trelent runs fork <run-id> -p "Now translate to German"
+trelent runs fork --latest -p "Summarize the output"
 ```
 
-### Get run details
+### Command Aliases
+
+For convenience:
+
+| Full | Aliases |
+|------|---------|
+| `sandboxes` | `s`, `sbx`, `sandbox` |
+| `runs` | `r`, `run` |
 
 ```bash
-agents get run-123abc
-agents get --latest
+trelent s build ./agents/my-agent
+trelent r list
 ```
 
-### Create a run
+### Per-command profile
+
+Use `-p` to override the active profile for a single command:
 
 ```bash
-agents create -s translator:latest -p "Translate hello to Spanish"
-agents create -s translator:latest -m gpt-4o -p "Translate to French" -t  # track immediately
-agents create -s translator:latest -p "Translate files" -i ./input/      # import local files
-```
-
-### Fork a run
-
-```bash
-agents fork run-123abc -p "Now translate to German"
-agents fork --latest -p "Summarize the translations"
-agents fork -l -p "New prompt" -i ./more-files/
-```
-
-### Manage sandboxes
-
-```bash
-agents sandboxes list
-agents sandboxes register translator:latest
+trelent -p prod runs list
+trelent -p dev sandboxes build ./agents/my-agent
 ```
 
 ## Example Workflow
 
 ```bash
-# 1. Push sandboxes to registry
-docker build -t agents.trelent.com/translator:latest translator-agent/
-docker push agents.trelent.com/translator:latest
+# 1. Set up authentication
+trelent auth add prod
 
-# 2. Register the sandbox
-agents sandboxes register translator:latest
+# 2. Build and push your agent
+trelent s build ./agents/translator-agent
 
-# 3. Create a run with imports
-agents create -s translator:latest -p "Translate all files in /mnt/" -i ./input/
+# 3. Create a run with input files
+trelent r create -s translator-agent:latest -p "Translate all files" -i ./input/
 
-# 4. Track the latest run
-agents track --latest
+# 4. Track until complete
+trelent r track --latest
 
-# 5. Fork to another language
-agents fork --latest -p "Translate to German instead"
-
-# 6. Track the fork
-agents track --latest
+# 5. Fork with a different prompt
+trelent r fork --latest -p "Now translate to German"
 ```
 
-## Sample Files
+## File Imports
 
-Place files in `input/` for import:
-- `greeting.txt` - Welcome message
-- `menu.txt` - Restaurant menu  
-- `instructions.txt` - Assembly instructions
-- `sales.csv` - Sales transactions
-- `customers.csv` - Customer records
-- `inventory.csv` - Inventory levels
+When creating a run with `-i ./path/`, local files are uploaded and available at `/mnt/` inside the sandbox.
 
-Imported files are available at `/mnt/` inside the sandbox.
+```bash
+trelent runs create -s data-handler:latest -p "Analyze the CSV" -i ./data/
+# Files in ./data/ are available at /mnt/ in the sandbox
+```
