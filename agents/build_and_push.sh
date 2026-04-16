@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REGISTRY="registry.dev.trelent.com"
+DEFAULT_REGISTRY="registry.dev.trelent.com"
 TRELENT_DIR="$HOME/.trelent"
 
 usage() {
@@ -59,6 +59,7 @@ fi
 PROFILE=$(get_profile)
 load_credentials "$PROFILE"
 
+REGISTRY="${registry_url:-$DEFAULT_REGISTRY}"
 IMAGE="$REGISTRY/$client_id/$AGENT:$TAG"
 
 echo "$client_secret" | docker login "$REGISTRY" -u "$client_id" --password-stdin

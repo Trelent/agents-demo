@@ -4,7 +4,7 @@ import requests
 from ..client import (
     save_profile, load_profile, delete_profile, check_credentials,
     list_profiles, get_default_profile, set_default_profile, get_profile,
-    PROFILES_DIR, DEFAULT_API_URL
+    PROFILES_DIR, DEFAULT_API_URL, DEFAULT_REGISTRY_URL,
 )
 
 
@@ -19,8 +19,16 @@ def auth():
 @click.option("--id", "client_id", help="Client ID")
 @click.option("--secret", "client_secret", help="Client secret")
 @click.option("--api-url", help="API URL")
+@click.option("--registry-url", help="Docker registry URL for agent images")
 @click.option("--skip-verify", is_flag=True, help="Skip credential verification")
-def add(profile: str | None, client_id: str | None, client_secret: str | None, api_url: str | None, skip_verify: bool):
+def add(
+    profile: str | None,
+    client_id: str | None,
+    client_secret: str | None,
+    api_url: str | None,
+    registry_url: str | None,
+    skip_verify: bool,
+):
     """Add a new profile.
 
     Examples:
@@ -33,13 +41,16 @@ def add(profile: str | None, client_id: str | None, client_secret: str | None, a
     existing = load_profile(profile)
 
     if not client_id:
-        default_id = existing.get("client_id") or ""
+        default_id = existing.client_id or ""
         client_id = click.prompt("Client ID", default=default_id or None)
     if not client_secret:
         client_secret = click.prompt("Client secret")
     if not api_url:
-        default_url = existing.get("api_url") or DEFAULT_API_URL
+        default_url = existing.api_url or DEFAULT_API_URL
         api_url = click.prompt("API URL", default=default_url)
+    if not registry_url:
+        default_registry = existing.registry_url or DEFAULT_REGISTRY_URL
+        registry_url = click.prompt("Registry URL", default=default_registry)
 
     if not skip_verify:
         click.echo("Verifying credentials...")
@@ -49,7 +60,7 @@ def add(profile: str | None, client_id: str | None, client_secret: str | None, a
             raise SystemExit(1)
         click.echo(f"✓ {msg}")
 
-    save_profile(profile, client_id, client_secret, api_url)
+    save_profile(profile, client_id, client_secret, api_url, registry_url)
     click.echo(f"Profile '{profile}' saved to {PROFILES_DIR / profile}")
 
 
@@ -95,16 +106,12 @@ def test():
     profile = get_profile()
     config = load_profile(profile)
 
-    if not config.get("client_id") or not config.get("client_secret"):
+    if not config.client_id or not config.client_secret:
         click.echo(f"No credentials for profile '{profile}'. Run 'trelent auth add {profile}'.", err=True)
         raise SystemExit(1)
 
     click.echo(f"Testing '{profile}'...")
-    ok, msg = check_credentials(
-        config["client_id"],
-        config["client_secret"],
-        config.get("api_url"),
-    )
+    ok, msg = check_credentials(config.client_id, config.client_secret, config.api_url)
 
     if ok:
         click.echo(f"✓ {msg}")
@@ -119,14 +126,15 @@ def show():
     profile = get_profile()
     config = load_profile(profile)
 
-    if not config.get("client_id"):
+    if not config.client_id:
         click.echo(f"Profile '{profile}' not configured.")
         return
 
-    click.echo(f"Profile:   {profile}")
-    click.echo(f"API URL:   {config.get('api_url') or DEFAULT_API_URL}")
-    click.echo(f"Client ID: {config.get('client_id')}")
-    click.echo(f"Secret:    {'*' * 8}")
+    click.echo(f"Profile:      {profile}")
+    click.echo(f"API URL:      {config.api_url or DEFAULT_API_URL}")
+    click.echo(f"Registry URL: {config.registry_url or DEFAULT_REGISTRY_URL}")
+    click.echo(f"Client ID:    {config.client_id}")
+    click.echo(f"Secret:       {'*' * 8}")
 
 
 @auth.command("rm")
@@ -154,11 +162,11 @@ def debug():
     profile = get_profile()
     config = load_profile(profile)
 
-    if not config.get("client_id"):
+    if not config.client_id:
         click.echo(f"No credentials for profile '{profile}'")
         return
 
-    url = config.get("api_url") or DEFAULT_API_URL
+    url = config.api_url or DEFAULT_API_URL
     token_url = f"{url.rstrip('/')}/token"
 
     click.echo(f"Profile: {profile}")
@@ -168,8 +176,8 @@ def debug():
     resp = requests.post(
         token_url,
         json={
-            "client_id": config["client_id"],
-            "client_secret": config["client_secret"],
+            "client_id": config.client_id,
+            "client_secret": config.client_secret,
             "scope": "AgentOrchestrator:*",
         },
     )

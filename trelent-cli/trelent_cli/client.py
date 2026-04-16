@@ -3,13 +3,23 @@ import os
 import sys
 from pathlib import Path
 import requests
+from pydantic import BaseModel
 from trelent_agents import Client
+import click
 
 CONFIG_DIR = Path.home() / ".trelent"
 PROFILES_DIR = CONFIG_DIR / "profiles"
 ACTIVE_FILE = CONFIG_DIR / "active"
-DEFAULT_API_URL = "https://agents.trelent.com"
+DEFAULT_API_URL = "https://api.dev.trelent.com/agent"
+DEFAULT_REGISTRY_URL = "registry.dev.trelent.com"
 DEFAULT_PROFILE = "default"
+
+
+class ProfileConfig(BaseModel):
+    client_id: str | None = None
+    client_secret: str | None = None
+    api_url: str | None = None
+    registry_url: str | None = None
 
 _current_profile: str | None = None
 
@@ -53,25 +63,42 @@ def list_profiles() -> list[str]:
     return [f.name for f in PROFILES_DIR.iterdir() if f.is_file()]
 
 
-def load_profile(profile: str | None = None) -> dict:
+def _parse_profile_file(profile_file: Path) -> dict[str, str]:
+    """Parse a key=value profile file into a raw dict."""
+    data: dict[str, str] = {}
+    for line in profile_file.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        data[key.strip()] = value.strip()
+    return data
+
+
+def load_profile(profile: str | None = None) -> ProfileConfig:
     """Load a specific profile's config."""
     profile = profile or get_profile()
     profile_file = PROFILES_DIR / profile
 
     if not profile_file.exists():
-        return {}
+        return ProfileConfig()
 
-    data = {}
-    for line in profile_file.read_text().splitlines():
-        line = line.strip()
-        if line and "=" in line and not line.startswith("#"):
-            key, value = line.split("=", 1)
-            data[key.strip()] = value.strip()
+    raw = _parse_profile_file(profile_file)
+    return ProfileConfig(
+        client_id=raw.get("client_id"),
+        client_secret=raw.get("client_secret"),
+        api_url=raw.get("api_url"),
+        registry_url=raw.get("registry_url"),
+    )
 
-    return data
 
-
-def save_profile(profile: str, client_id: str, client_secret: str, api_url: str | None = None) -> None:
+def save_profile(
+    profile: str,
+    client_id: str,
+    client_secret: str,
+    api_url: str | None = None,
+    registry_url: str | None = None,
+) -> None:
     """Save credentials to a profile."""
     PROFILES_DIR.mkdir(parents=True, exist_ok=True)
     profile_file = PROFILES_DIR / profile
@@ -82,11 +109,12 @@ def save_profile(profile: str, client_id: str, client_secret: str, api_url: str 
     ]
     if api_url:
         lines.append(f"api_url={api_url}")
+    if registry_url:
+        lines.append(f"registry_url={registry_url}")
 
     profile_file.write_text("\n".join(lines) + "\n")
     profile_file.chmod(0o600)
 
-    # Set as default if it's the first profile
     if not ACTIVE_FILE.exists():
         ACTIVE_FILE.write_text(profile + "\n")
 
@@ -109,7 +137,8 @@ def check_credentials(client_id: str, client_secret: str, api_url: str | None = 
     """Check if credentials are valid by requesting a token."""
     url = api_url or DEFAULT_API_URL
     token_url = f"{url.rstrip('/')}/token"
-
+    click.echo(f"Checking credentials for {url}")
+    
     try:
         resp = requests.post(
             token_url,
@@ -136,9 +165,9 @@ def get_client() -> Client:
 
     if not client_id or not client_secret:
         profile_config = load_profile()
-        client_id = client_id or profile_config.get("client_id")
-        client_secret = client_secret or profile_config.get("client_secret")
-        api_url = api_url or profile_config.get("api_url")
+        client_id = client_id or profile_config.client_id
+        client_secret = client_secret or profile_config.client_secret
+        api_url = api_url or profile_config.api_url
 
     if not client_id or not client_secret:
         profile = get_profile()
