@@ -17,7 +17,12 @@ def main(ctx, profile: str | None):
 
 main.add_command(auth)
 main.add_command(runs)
+main.add_command(runs, name="run")
+main.add_command(runs, name="r")
 main.add_command(sandboxes)
+main.add_command(sandboxes, name="sandbox")
+main.add_command(sandboxes, name="sbx")
+main.add_command(sandboxes, name="s")
 
 
 if __name__ == "__main__":
