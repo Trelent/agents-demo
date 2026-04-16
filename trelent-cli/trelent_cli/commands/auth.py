@@ -187,3 +187,32 @@ def debug():
         click.echo("Token: " + resp.json().get("access_token", "")[:50] + "...")
     else:
         click.echo(f"Error: {resp.text[:200]}")
+
+
+@auth.command("token")
+def token():
+    """Get a JWT access token for the current profile."""
+    profile = get_profile()
+    config = load_profile(profile)
+
+    if not config.client_id or not config.client_secret:
+        click.echo(f"No credentials for profile '{profile}'. Run 'trelent auth add {profile}'.", err=True)
+        raise SystemExit(1)
+
+    url = config.api_url or DEFAULT_API_URL
+    token_url = f"{url.rstrip('/')}/token"
+
+    resp = requests.post(
+        token_url,
+        json={
+            "client_id": config.client_id,
+            "client_secret": config.client_secret,
+            "scope": "AgentOrchestrator:*",
+        },
+    )
+
+    if resp.status_code != 200:
+        click.echo(f"Token exchange failed ({resp.status_code}): {resp.text}", err=True)
+        raise SystemExit(1)
+
+    click.echo(resp.json().get("access_token", ""))

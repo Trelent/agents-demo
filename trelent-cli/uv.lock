@@ -281,7 +281,7 @@ wheels = [
 
 [[package]]
 name = "trelent-cli"
-version = "0.1.10"
+version = "0.1.15"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
@@ -291,7 +291,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1" },
-    { name = "trelent-agents", specifier = ">=0.2.1" },
+    { name = "trelent-agents", specifier = ">=0.2.3" },
 ]
 
 [[package]]
