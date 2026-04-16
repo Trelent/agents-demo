@@ -106,9 +106,18 @@ trelent sandboxes get my-agent:latest
 trelent runs list
 trelent runs list -n 20  # show 20 most recent
 
-# Create a run
+# Create a run (defaults to claude_code harness)
 trelent runs create -s translator:latest -p "Translate hello to Spanish"
 trelent runs create -s translator:latest -p "Translate files" -i ./input/  # with local files
+
+# Pick a harness: claude, codex, or gemini
+trelent runs create -s my-agent:latest -p "Do it" -h codex
+trelent runs create -s my-agent:latest -p "Do it" -h gemini
+
+# Override the model (harness is auto-inferred from prefix)
+trelent runs create -s my-agent:latest -p "Do it" -m gpt-5.4         # → codex
+trelent runs create -s my-agent:latest -p "Do it" -m claude-opus-4   # → claude_code
+trelent runs create -s my-agent:latest -p "Do it" -m gemini-3.1-pro  # → gemini
 
 # Track a run until completion
 trelent runs track <run-id>

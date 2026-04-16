@@ -1,10 +1,63 @@
 """Run management commands."""
-import os
 import time
 import click
-from trelent_agents import ClaudeCodeHarnessSpec, HarnessKind, LocalImporter
+from trelent_agents import (
+    ClaudeCodeHarnessSpec,
+    CodexHarnessSpec,
+    GeminiHarnessSpec,
+    LocalImporter,
+)
 from trelent_agents.types import HarnessSpec
 from ..client import get_client
+
+
+HARNESS_ALIASES = {
+    "claude": ClaudeCodeHarnessSpec,
+    "claude_code": ClaudeCodeHarnessSpec,
+    "claude-code": ClaudeCodeHarnessSpec,
+    "codex": CodexHarnessSpec,
+    "gpt": CodexHarnessSpec,
+    "gemini": GeminiHarnessSpec,
+}
+
+
+def _infer_harness_from_model(model: str) -> type[HarnessSpec] | None:
+    """Guess harness class from model name prefix."""
+    prefix = model.lower()
+    if prefix.startswith("claude"):
+        return ClaudeCodeHarnessSpec
+    if prefix.startswith("gpt") or prefix.startswith("codex") or prefix.startswith("o"):
+        return CodexHarnessSpec
+    if prefix.startswith("gemini"):
+        return GeminiHarnessSpec
+    return None
+
+
+def _build_harness(harness: str | None, model: str | None) -> HarnessSpec | None:
+    """Construct a harness spec from CLI flags.
+
+    - No flags: returns None (SDK default = claude_code)
+    - --harness only: uses harness's default model
+    - --model only: infers harness from model prefix
+    - Both: uses specified harness + model
+    """
+    if not harness and not model:
+        return None
+
+    if harness:
+        key = harness.lower()
+        if key not in HARNESS_ALIASES:
+            valid = ", ".join(sorted(set(HARNESS_ALIASES.keys())))
+            raise click.BadParameter(f"Unknown harness '{harness}'. Valid: {valid}")
+        cls = HARNESS_ALIASES[key]
+    else:
+        cls = _infer_harness_from_model(model or "")
+        if cls is None:
+            raise click.BadParameter(
+                f"Could not infer harness from model '{model}'. Use -h to specify (claude, codex, gemini)."
+            )
+
+    return cls(model=model) if model else cls()
 
 
 def _get_latest_run_id(client) -> str:
@@ -75,7 +128,7 @@ def get_run(run_id: str | None, latest: bool):
     click.echo(f"ID:      {run.id}")
     click.echo(f"Status:  {run.status}")
     click.echo(f"Sandbox: {run.sandbox}")
-    click.echo(f"Model:   {run.harness.model}")
+    click.echo(f"Harness: {run.harness.kind} ({run.harness.model})")
 
     if run.result:
         click.echo("\n--- Output ---")
@@ -111,29 +164,44 @@ def track_run(run_id: str | None, latest: bool, poll: int):
 @runs.command("create")
 @click.option("--sandbox", "-s", required=True, help="Sandbox name (e.g., translator:latest)")
 @click.option("--prompt", "-p", required=True, help="Prompt for the run")
+@click.option("--harness", "-h", help="Harness: claude, codex, or gemini (default: claude)")
+@click.option("--model", "-m", help="Model override (auto-infers harness from prefix if -h omitted)")
 @click.option("--import-path", "-i", multiple=True, help="Local paths to import (mounted at /mnt/)")
 @click.option("--track", "-t", "should_track", is_flag=True, help="Track run until completion")
-def create_run(sandbox: str, prompt: str, import_path: tuple, should_track: bool):
+def create_run(
+    sandbox: str,
+    prompt: str,
+    harness: str | None,
+    model: str | None,
+    import_path: tuple,
+    should_track: bool,
+):
     """Create a new run.
 
-    Example: trelent runs create -s translator:latest -p "Translate hello to Spanish"
+    Examples:
+
+        trelent runs create -s translator:latest -p "Translate hello"
+
+        trelent runs create -s my-agent:latest -p "Do it" -h codex
+
+        trelent runs create -s my-agent:latest -p "Do it" -m gpt-5.4
+
+        trelent runs create -s my-agent:latest -p "Do it" -h gemini -m gemini-3.1-pro
     """
     client = get_client()
-
+    harness_spec = _build_harness(harness, model)
     imports = [LocalImporter(path=p) for p in import_path] if import_path else None
 
     run = client.runs.create(
         sandbox=sandbox,
-        harness=ClaudeCodeHarnessSpec(
-            kind=HarnessKind.CLAUDE_CODE,
-            model="claude-sonnet-4-6",
-        ),
+        harness=harness_spec,
         prompt=prompt,
         imports=imports,
     )
 
-    click.echo(f"Run ID: {run.id}")
-    click.echo(f"Status: {run.status}")
+    click.echo(f"Run ID:  {run.id}")
+    click.echo(f"Status:  {run.status}")
+    click.echo(f"Harness: {run.harness.kind} ({run.harness.model})")
 
     if imports:
         click.echo(f"\nImported {len(imports)} path(s) to /mnt/")
