@@ -128,10 +128,12 @@ trelent runs fork --latest -p "Summarize the output"
 
 For convenience:
 
-| Full | Aliases |
-|------|---------|
+
+| Full        | Aliases               |
+| ----------- | --------------------- |
 | `sandboxes` | `s`, `sbx`, `sandbox` |
-| `runs` | `r`, `run` |
+| `runs`      | `r`, `run`            |
+
 
 ```bash
 trelent s build ./agents/my-agent
@@ -174,3 +176,4 @@ When creating a run with `-i ./path/`, local files are uploaded and available at
 trelent runs create -s data-handler:latest -p "Analyze the CSV" -i ./data/
 # Files in ./data/ are available at /mnt/ in the sandbox
 ```
+
