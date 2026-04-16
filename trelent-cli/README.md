@@ -46,8 +46,13 @@ uv tool install . --force  # reinstall after changes
 # Add a profile (interactive)
 trelent auth add prod
 
-# Add with flags
-trelent auth add dev --id YOUR_ID --secret YOUR_SECRET
+# Add with flags (all options)
+trelent auth add dev \
+  --id YOUR_CLIENT_ID \
+  --secret YOUR_SECRET \
+  --api-url https://api.dev.trelent.com/agent \
+  --registry-url registry.dev.trelent.com \
+  --skip-verify  # optional: skip credential check
 
 # List profiles
 trelent auth list
