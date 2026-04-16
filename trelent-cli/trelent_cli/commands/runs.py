@@ -75,7 +75,7 @@ def get_run(run_id: str | None, latest: bool):
     click.echo(f"ID:      {run.id}")
     click.echo(f"Status:  {run.status}")
     click.echo(f"Sandbox: {run.sandbox}")
-    click.echo(f"Model:   {run.model}")
+    click.echo(f"Model:   {run.harness.model}")
 
     if run.result:
         click.echo("\n--- Output ---")
